@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brothers Karamazov Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Brothers Karamazov Chatbot</h1>
+    <div id="chat-container"></div>
+    <input type="text" id="user-input" placeholder="Ask a question...">
+    <button onclick="sendMessage()">Send</button>
+    <div id="feedback-container" style="display: none;">
+        <p>Was this response helpful?</p>
+        <button onclick="sendFeedback(true)">Yes</button>
+        <button onclick="sendFeedback(false)">No</button>
+    </div>
+
+    <script>
+        let chatHistory = [];
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const chatContainer = document.getElementById('chat-container');
+            const query = userInput.value;
+            userInput.value = '';
+
+            chatContainer.innerHTML += `<p><strong>You:</strong> ${query}</p>`;
+
+            try {
+                const response = await axios.post('/chat', { query, chat_history: chatHistory });
+                const answer = response.data.answer;
+                chatContainer.innerHTML += `<p><strong>AI:</strong> ${answer}</p>`;
+                chatHistory.push([query, answer]);
+
+                document.getElementById('feedback-container').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function sendFeedback(isHelpful) {
+            try {
+                await axios.post('/feedback', { 
+                    is_helpful: isHelpful, 
+                    last_query: chatHistory[chatHistory.length - 1][0],
+                    last_answer: chatHistory[chatHistory.length - 1][1]
+                });
+                document.getElementById('feedback-container').style.display = 'none';
+            } catch (error) {
+                console.error('Error sending feedback:', error);
+            }
+        }
+    </script>
+</body>
+</html>
