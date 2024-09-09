@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brothers Karamazov Chatbot</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .chunk {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <h1>Brothers Karamazov Chatbot</h1>
@@ -31,7 +39,17 @@
             try {
                 const response = await axios.post('/chat', { query, chat_history: chatHistory });
                 const answer = response.data.answer;
-                chatContainer.innerHTML += `<p><strong>AI:</strong> ${answer}</p>`;
+                const retrievedChunks = response.data.retrieved_chunks;
+                const evaluation = response.data.evaluation;
+
+                let responseHtml = `<p><strong>AI:</strong> ${answer}</p>`;
+                responseHtml += `<p><strong>Relevance Score:</strong> ${evaluation.relevance.toFixed(4)}</p>`;
+                responseHtml += `<p><strong>Retrieved Chunks:</strong></p>`;
+                retrievedChunks.forEach(chunk => {
+                    responseHtml += `<div class="chunk">${chunk}</div>`;
+                });
+
+                chatContainer.innerHTML += responseHtml;
                 chatHistory.push([query, answer]);
 
                 document.getElementById('feedback-container').style.display = 'block';

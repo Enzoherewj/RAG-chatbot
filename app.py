@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from rag_chatbot import chat, initialize_chatbot
+from rag_chatbot import chat, initialize_chatbot, test_embeddings
 import os
 
 app = Flask(__name__)
@@ -32,15 +32,24 @@ def handle_chat():
     query = request.json['query']
     global chat_history
     
-    answer, source_docs, evaluation = chat(query, chat_history)
+    answer, retrieved_chunks, evaluation = chat(query, chat_history)
     
     chat_history.append((query, answer))
     
     return jsonify({
         "answer": answer,
-        "sources": [doc.page_content for doc in source_docs],
+        "retrieved_chunks": retrieved_chunks,
         "evaluation": evaluation
     })
+
+@app.route('/test_embeddings', methods=['POST'])
+def handle_test_embeddings():
+    query = request.json['query']
+    k = request.json.get('k', 5)
+    
+    test_embeddings(query, k)
+    
+    return jsonify({"status": "Embeddings test complete. Check console for results."})
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
