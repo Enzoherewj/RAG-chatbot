@@ -11,13 +11,24 @@ from langchain_chroma import Chroma
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import logging
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
 
-# Configure logging
+# Download necessary NLTK data
+nltk.download('punkt')
+
+# Initialize stemmer
+stemmer = PorterStemmer()
+
+# At the top of the file, configure logging for debug level
 logging.basicConfig(
-    filename='test_retreival.log',
-    filemode='a',
+    filename='test_retreival_debug.log',
+    filemode='w',  # Overwrite the log file each run
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.DEBUG
 )
 
 # Initialize OpenAI client
@@ -44,6 +55,10 @@ def load_data(vectorstore_path):
         'text': chunks['documents'],
         'vector': chunks['embeddings']
     })
+
+    # **Add Debugging Statements**
+    logging.debug(f"chunk_id types: {df_chunks['chunk_id'].dtype}")
+    logging.debug("Sample chunk_ids:\n" + df_chunks['chunk_id'].head().to_string())
 
     return df_chunks, vectorstore
 
@@ -138,6 +153,12 @@ def generate_questions(df_chunks, questions_path, num_questions_per_chunk=5):
         print("All chunks have already been processed.")
         return pd.DataFrame(questions)
     
+    # **Add Validation Step**
+    print("Validating chunk_id integrity in questions...")
+    invalid_chunk_ids = set(df_questions['chunk_id']) - set(df_chunks['chunk_id'])
+    if invalid_chunk_ids:
+        logging.warning(f"Found {len(invalid_chunk_ids)} invalid chunk_ids in questions.")
+    
     # Define the number of worker processes (use all available CPUs)
     num_processes = cpu_count()
     
@@ -164,6 +185,27 @@ def create_minsearch_index(documents):
     index.fit(documents)
     return index
 
+def create_chroma_index(documents):
+    """
+    Create a Chroma vectorstore index from the given documents.
+
+    Args:
+        documents (list of dict): List of documents, each containing 'chunk_id' and 'text'.
+
+    Returns:
+        Chroma: Chroma vectorstore instance.
+    """
+    texts = [doc['text'] for doc in documents]
+    metadatas = [{'chunk_id': doc['chunk_id']} for doc in documents]
+
+    embeddings = OpenAIEmbeddings()
+    vectorstore = Chroma.from_texts(
+        texts=texts,
+        embedding=embeddings,
+        metadatas=metadatas
+    )
+    return vectorstore
+
 def minsearch_retrieval(index, query, num_results=10):
     """Retrieve documents using MinSearch index."""
     results = index.search(
@@ -186,14 +228,20 @@ def chroma_retrieval(vectorstore, query, num_results=10):
     Returns:
         list of dict: List containing retrieved documents with 'chunk_id' and 'text'.
     """
-    results = vectorstore.similarity_search(query, k=num_results)
+    results = vectorstore.similarity_search_with_relevance_scores(query, k=num_results)
 
     retrieved_documents = []
-    for doc in results:
-        retrieved_documents.append({
-            'chunk_id': doc.metadata.get('chunk_id', 'unknown_id'),
-            'text': doc.page_content
-        })
+    for doc, score in results:
+        retrieved_document = {
+            'chunk_id': doc.metadata['chunk_id'],
+            'text': doc.page_content,
+            'score': score
+        }
+        retrieved_documents.append(retrieved_document)
+    
+    # Debugging output
+    retrieved_ids = [doc['chunk_id'] for doc in retrieved_documents]
+    logging.debug(f"Retrieved chunk_ids for query '{query}': {retrieved_ids}")
 
     return retrieved_documents
 
@@ -230,12 +278,17 @@ def evaluate_retrieval(df_questions, retrieval_func, method_name="Generic Retrie
     """
     relevance_total = []
 
-    for _, row in tqdm(df_questions.iterrows(), total=len(df_questions), desc=f"Evaluating questions using {method_name}"):
+    for idx, row in tqdm(df_questions.iterrows(), total=len(df_questions), desc=f"Evaluating questions using {method_name}"):
         expected_chunk_id = row['chunk_id']
         question = row['question']
 
         results = retrieval_func(question)
         retrieved_chunk_ids = [str(doc['chunk_id']) for doc in results]
+
+        # **Add Debugging Statements**
+        if not retrieved_chunk_ids:
+            logging.debug(f"No documents retrieved for question ID {idx}: {question}")
+        
         relevance = [doc_id == str(expected_chunk_id) for doc_id in retrieved_chunk_ids]
         relevance_total.append(relevance)
     
@@ -248,14 +301,52 @@ def evaluate_retrieval(df_questions, retrieval_func, method_name="Generic Retrie
         'mrr': mrr_score
     }
 
+def preprocess_text(text):
+    # Tokenize and stem the text
+    tokens = word_tokenize(text.lower())
+    stemmed_tokens = [stemmer.stem(token) for token in tokens]
+    return ' '.join(stemmed_tokens)
+
+def hybrid_retrieval(vectorstore, tfidf_vectorizer, tfidf_matrix, query, num_results=10, alpha=0.5):
+    # Preprocess the query
+    processed_query = preprocess_text(query)
+    
+    # Get embedding-based results
+    embedding_results = chroma_retrieval(vectorstore, processed_query, num_results)
+    
+    # Get TF-IDF based results
+    query_vector = tfidf_vectorizer.transform([processed_query])
+    tfidf_similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+    tfidf_top_indices = tfidf_similarities.argsort()[-num_results:][::-1]
+    
+    # Combine results
+    combined_results = []
+    for i, (emb_result, tfidf_index) in enumerate(zip(embedding_results, tfidf_top_indices)):
+        combined_score = alpha * emb_result['score'] + (1 - alpha) * tfidf_similarities[tfidf_index]
+        combined_results.append({
+            'chunk_id': emb_result['chunk_id'],
+            'text': emb_result['text'],
+            'score': combined_score
+        })
+    
+    # Sort by combined score
+    combined_results.sort(key=lambda x: x['score'], reverse=True)
+    
+    return combined_results[:num_results]
+
 def main():
     vectorstore_path = "../vectorstore"
     output_path = os.path.join('../vectorstore', 'retrieval_results.json')
     questions_path = os.path.join('../vectorstore', 'generated_questions.csv')
 
     print("Loading data from Chroma vectorstore...")
-    df_chunks, vectorstore = load_data(vectorstore_path)
+    df_chunks, _ = load_data(vectorstore_path)
     print(f"Loaded {len(df_chunks)} chunks.")
+
+    print("Recreating Chroma vectorstore with chunk_id metadata...")
+    documents = df_chunks.to_dict(orient='records')
+    vectorstore = create_chroma_index(documents)
+    print("Chroma vectorstore recreated.")
 
     if os.path.exists(questions_path):
         print("Loading existing questions...")
@@ -265,6 +356,11 @@ def main():
         df_questions = generate_questions(df_chunks, questions_path)  # Pass questions_path here
         df_questions.to_csv(questions_path, index=False)
     print(f"Total questions: {len(df_questions)}")
+
+    # **Add Sampling Step**
+    sample_size = 100  # You can adjust the sample size as needed
+    df_sampled = df_questions.sample(n=sample_size, random_state=42)
+    logging.debug(f"Sampled {len(df_sampled)} questions for testing.")
 
     print("Creating MinSearch index...")
     documents = df_chunks.to_dict(orient='records')
@@ -276,7 +372,7 @@ def main():
     def minsearch_retrieval_wrapper(query, num_results=10):
         return minsearch_retrieval(minsearch_index, query, num_results)
     
-    results_minsearch = evaluate_retrieval(df_questions, minsearch_retrieval_wrapper, method_name="MinSearch")
+    results_minsearch = evaluate_retrieval(df_sampled, minsearch_retrieval_wrapper, method_name="MinSearch")
     print("MinSearch Evaluation Results:")
     print(results_minsearch)
 
@@ -285,12 +381,24 @@ def main():
     def chroma_retrieval_wrapper(query, num_results=10):
         return chroma_retrieval(vectorstore, query, num_results)
     
-    results_chroma = evaluate_retrieval(df_questions, chroma_retrieval_wrapper, method_name="Chroma Semantic Search")
+    results_chroma = evaluate_retrieval(df_sampled, chroma_retrieval_wrapper, method_name="Chroma Semantic Search")
     print("Chroma Semantic Search Evaluation Results:")
     print(results_chroma)
 
+    # Create TF-IDF vectorizer and matrix
+    tfidf_vectorizer = TfidfVectorizer(preprocessor=preprocess_text)
+    tfidf_matrix = tfidf_vectorizer.fit_transform(df_chunks['text'])
+
+    print("Evaluating retrieval performance using Hybrid Search...")
+    def hybrid_retrieval_wrapper(query, num_results=10):
+        return hybrid_retrieval(vectorstore, tfidf_vectorizer, tfidf_matrix, query, num_results)
+    
+    results_hybrid = evaluate_retrieval(df_sampled, hybrid_retrieval_wrapper, method_name="Hybrid Search")
+    print("Hybrid Search Evaluation Results:")
+    print(results_hybrid)
+
     # Combine results for comparison
-    combined_results = [results_minsearch, results_chroma]
+    combined_results = [results_minsearch, results_chroma, results_hybrid]
     print("Combined Evaluation Results:")
     for res in combined_results:
         print(f"Method: {res['method']}, Hit Rate: {res['hit_rate']:.4f}, MRR: {res['mrr']:.4f}")
