@@ -8,6 +8,7 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
 - Web interface for easy interaction
 - Evaluation metrics for response quality
 - User feedback collection
+- Retrieval performance evaluation using multiple methods (MinSearch, Chroma Semantic Search, and Hybrid Search)
 
 ## Setup
 
@@ -46,11 +47,28 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
 - `rag_chatbot.py`: Core RAG chatbot logic
 - `evaluation.py`: Functions for evaluating response quality
 - `templates/index.html`: HTML template for the web interface
+- `experiments/test_retreival.py`: Script for evaluating retrieval performance
+
+## Retrieval Performance Evaluation
+
+To evaluate the retrieval performance:
+
+1. Ensure you're in the `experiments` directory
+2. Run the evaluation script:
+   ```
+   python test_retreival.py
+   ```
+3. The script will evaluate retrieval performance using:
+   - MinSearch
+   - Chroma Semantic Search
+   - Hybrid Search (combining embedding-based and TF-IDF)
+4. Results will be saved in `../vectorstore/retrieval_results.json`
 
 ## Notes
 
 - The chatbot uses OpenAI's GPT model and embeddings
 - Responses are generated based on relevant passages from the novel
 - User feedback is collected to help improve the chatbot
+- The retrieval evaluation compares different methods to find the most effective approach for this specific use case
 
 Enjoy exploring "The Brothers Karamazov" with your new AI assistant!

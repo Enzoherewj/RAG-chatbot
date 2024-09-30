@@ -1,0 +1,17 @@
+[
+  {
+    "method": "MinSearch",
+    "hit_rate": 0.62,
+    "mrr": 0.3714920634920636
+  },
+  {
+    "method": "Chroma Semantic Search",
+    "hit_rate": 0.64,
+    "mrr": 0.48387301587301595
+  },
+  {
+    "method": "Hybrid Search",
+    "hit_rate": 0.61,
+    "mrr": 0.44195634920634935
+  }
+]
