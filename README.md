@@ -9,6 +9,7 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
 - Evaluation metrics for response quality
 - User feedback collection
 - Retrieval performance evaluation using multiple methods (MinSearch, Chroma Semantic Search, and Hybrid Search)
+- Monitoring dashboard with interactive visualizations
 
 ## Setup
 
@@ -28,6 +29,16 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
    ```
 5. Ensure you have the "Brothers_Karamazov.txt" file in the project root
 
+## Data Ingestion
+
+Before running the chatbot, you need to ingest the document and create the vectorstore:
+
+1. Run the ingestion script:
+   ```
+   python ingest.py
+   ```
+   This will create a `vectorstore` directory with the processed data.
+
 ## Running the Chatbot
 
 1. Activate the virtual environment (if not already activated):
@@ -45,9 +56,11 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
 
 - `app.py`: Flask application for the web interface
 - `rag_chatbot.py`: Core RAG chatbot logic
+- `ingest.py`: Script for ingesting the document and creating the vectorstore
 - `evaluation.py`: Functions for evaluating response quality
 - `templates/index.html`: HTML template for the web interface
 - `experiments/test_retreival.py`: Script for evaluating retrieval performance
+- `dashboard.py`: Streamlit dashboard for monitoring chatbot performance
 
 ## Retrieval Performance Evaluation
 
@@ -64,11 +77,35 @@ To evaluate the retrieval performance:
    - Hybrid Search (combining embedding-based and TF-IDF)
 4. Results will be saved in `../vectorstore/retrieval_results.json`
 
+## Monitoring Dashboard
+
+The project includes a Streamlit dashboard for monitoring the chatbot's performance and user interactions.
+
+To view the monitoring dashboard:
+
+1. Ensure you have collected some interaction and feedback data by using the chatbot.
+2. Run the Streamlit dashboard:
+   ```
+   streamlit run dashboard.py
+   ```
+3. Open your web browser and go to the URL provided by Streamlit (usually `http://localhost:8501`).
+
+The dashboard includes the following interactive visualizations:
+
+1. **Interactions Over Time**: A line chart showing the cumulative number of interactions with the chatbot over time.
+2. **User Feedback Distribution**: A pie chart displaying the distribution of helpful vs. not helpful feedback from users.
+3. **Average Evaluation Scores Over Time**: A line chart showing how the chatbot's evaluation scores have changed over time.
+4. **Query Length Distribution**: A histogram showing the distribution of query lengths, helping to understand the complexity of user questions.
+5. **Top 10 Most Common Words in Queries**: A bar chart displaying the most frequently used words in user queries, providing insights into common topics or themes.
+
+These visualizations provide valuable insights into the chatbot's performance, user behavior, and areas for potential improvement.
+
 ## Notes
 
 - The chatbot uses OpenAI's GPT model and embeddings
 - Responses are generated based on relevant passages from the novel
 - User feedback is collected to help improve the chatbot
 - The retrieval evaluation compares different methods to find the most effective approach for this specific use case
+- The monitoring dashboard helps in tracking the chatbot's performance and user engagement over time
 
 Enjoy exploring "The Brothers Karamazov" with your new AI assistant!

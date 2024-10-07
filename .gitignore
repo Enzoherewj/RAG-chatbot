@@ -1,6 +1,5 @@
 .env
 __pycache__
-vectorstore/
 chatbot.log
 *.pkl
 rag-chatbot/
