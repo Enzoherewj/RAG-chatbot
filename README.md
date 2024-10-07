@@ -23,11 +23,19 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
    ```
    pip install -r requirements.txt
    ```
-4. Create a `.env` file in the project root and add your OpenAI API key:
+4. Obtain an OpenAI API key:
+   - Go to https://platform.openai.com/
+   - Sign up or log in to your account
+   - Navigate to the API keys section
+   - Create a new API key
+5. Create a `.env` file in the project root and add your OpenAI API key:
    ```
    OPENAI_API_KEY=your_api_key_here
    ```
-5. Ensure you have the "Brothers_Karamazov.txt" file in the project root
+   Replace `your_api_key_here` with the API key you obtained from OpenAI.
+6. Ensure you have the "Brothers_Karamazov.txt" file in the project root
+
+Note: A valid OpenAI API key is required for the chatbot to function. Make sure you have sufficient credits in your OpenAI account to use the API.
 
 ## Data Ingestion and Embeddings
 
@@ -162,21 +170,24 @@ To run the entire application (including the Flask app and Streamlit dashboard) 
 
 1. Ensure you have Docker and Docker Compose installed on your system.
 
-2. Create a `.env` file in the project root with your OpenAI API key:
+2. Obtain an OpenAI API key as described in the Setup section above.
+
+3. Create a `.env` file in the project root with your OpenAI API key:
    ```
    OPENAI_API_KEY=your_api_key_here
    ```
+   Replace `your_api_key_here` with your actual OpenAI API key.
 
-3. Build and start the containers:
+4. Build and start the containers:
    ```
    docker-compose up --build
    ```
 
-4. Access the applications:
+5. Access the applications:
    - Flask app: `http://localhost:5001`
    - Streamlit dashboard: `http://localhost:8501`
 
-5. To stop the containers, use:
+6. To stop the containers, use:
    ```
    docker-compose down
    ```
