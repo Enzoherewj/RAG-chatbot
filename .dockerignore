@@ -1,0 +1,8 @@
+vectorstore/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git
+.env
+*.log
