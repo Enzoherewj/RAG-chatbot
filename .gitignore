@@ -3,3 +3,4 @@ __pycache__
 chatbot.log
 *.pkl
 rag-chatbot/
+.DS_Store
