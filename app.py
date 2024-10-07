@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, jsonify
 from rag_chatbot import chat, initialize_chatbot
 import os
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
 chat_history = []
 chatbot_initialized = False
+feedback_data = []
 
 def initialize():
     global chatbot_initialized
@@ -36,6 +39,17 @@ def handle_chat():
     
     chat_history.append((query, answer))
     
+    # Store interaction data
+    interaction = {
+        "timestamp": datetime.now().isoformat(),
+        "query": query,
+        "answer": answer,
+        "evaluation": evaluation
+    }
+    with open('interaction_log.json', 'a') as f:
+        json.dump(interaction, f)
+        f.write('\n')
+    
     return jsonify({
         "answer": answer,
         "sources": [doc.page_content for doc in source_docs],
@@ -45,6 +59,13 @@ def handle_chat():
 @app.route('/feedback', methods=['POST'])
 def feedback():
     feedback_data = request.json
+    feedback_data['timestamp'] = datetime.now().isoformat()
+    
+    # Store feedback data
+    with open('feedback_log.json', 'a') as f:
+        json.dump(feedback_data, f)
+        f.write('\n')
+    
     print(f"Feedback received: {feedback_data}")
     return jsonify({"status": "success"})
 
@@ -53,5 +74,4 @@ def test():
     return "Hello, this is a test route!"
 
 if __name__ == '__main__':
-    print("Starting Flask app...")
     app.run(debug=True, port=5001)
