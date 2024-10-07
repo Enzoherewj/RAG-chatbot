@@ -112,18 +112,50 @@ Enjoy exploring "The Brothers Karamazov" with your new AI assistant!
 
 ## Docker Deployment
 
-To run the application in a Docker container:
+To run the entire application (including the Flask app and Streamlit dashboard) using Docker Compose:
 
-1. Build the Docker image:
-   ```
-   docker build -t brothers-karamazov-chatbot .
-   ```
+1. Ensure you have Docker and Docker Compose installed on your system.
 
-2. Run the Docker container:
+2. Create a `.env` file in the project root with your OpenAI API key:
    ```
-   docker run -p 5001:5001 -e OPENAI_API_KEY=your_api_key_here brothers-karamazov-chatbot
+   OPENAI_API_KEY=your_api_key_here
    ```
 
-3. Access the chatbot at `http://localhost:5001` in your web browser.
+3. Build and start the containers:
+   ```
+   docker-compose up --build
+   ```
 
-Note: Make sure to replace `your_api_key_here` with your actual OpenAI API key.
+4. Access the applications:
+   - Flask app: `http://localhost:5001`
+   - Streamlit dashboard: `http://localhost:8501`
+
+5. To stop the containers, use:
+   ```
+   docker-compose down
+   ```
+
+Note: The first time you run the containers, it may take some time as the system generates embeddings for the novel. Subsequent runs will be faster as the vectorstore is persisted.
+
+## Project Structure
+
+- `app.py`: Flask application for the web interface
+- `dashboard.py`: Streamlit dashboard for monitoring chatbot performance
+- `rag_chatbot.py`: Core RAG chatbot logic
+- `ingest.py`: Script for ingesting the document and creating the vectorstore
+- `evaluation.py`: Functions for evaluating response quality
+- `init_setup.py`: Script to initialize the vectorstore (used in Docker setup)
+- `Dockerfile`: Defines the Docker image for both Flask app and Streamlit dashboard
+- `docker-compose.yml`: Defines the multi-container Docker application
+- `requirements.txt`: List of Python dependencies
+- `.dockerignore`: Specifies files and directories to be excluded from the Docker build context
+
+## Notes
+
+- The chatbot uses OpenAI's GPT model and embeddings
+- Responses are generated based on relevant passages from the novel
+- User feedback is collected to help improve the chatbot
+- The retrieval evaluation compares different methods to find the most effective approach for this specific use case
+- The monitoring dashboard helps in tracking the chatbot's performance and user engagement over time
+
+Enjoy exploring "The Brothers Karamazov" with your new AI assistant!

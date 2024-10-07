@@ -1,0 +1,38 @@
+services:
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+      - ./vectorstore:/app/vectorstore
+      - ./Brothers_Karamazov.txt:/app/Brothers_Karamazov.txt
+    command: >
+      sh -c "python init_setup.py &&
+             mkdir -p /app/logs &&
+             touch /app/logs/interaction_log.json &&
+             touch /app/logs/feedback_log.json &&
+             flask run --host=0.0.0.0 --port=5001"
+
+  streamlit_dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+    command: >
+      sh -c "mkdir -p /app/logs &&
+             touch /app/logs/interaction_log.json &&
+             touch /app/logs/feedback_log.json &&
+             streamlit run dashboard.py"
+
+volumes:
+  vectorstore:
