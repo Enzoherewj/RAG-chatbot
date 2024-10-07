@@ -29,15 +29,17 @@ This project implements a Retrieval-Augmented Generation (RAG) chatbot that answ
    ```
 5. Ensure you have the "Brothers_Karamazov.txt" file in the project root
 
-## Data Ingestion
+## Data Ingestion and Embeddings
 
-Before running the chatbot, you need to ingest the document and create the vectorstore:
+The project comes with pre-generated embeddings for your convenience. However, if you wish to regenerate the embeddings or ingest new data:
 
 1. Run the ingestion script:
    ```
    python ingest.py
    ```
-   This will create a `vectorstore` directory with the processed data.
+   This will create or update the `vectorstore` directory with the processed data.
+
+Note: Using the pre-generated embeddings will significantly reduce the initial setup time.
 
 ## Running the Chatbot
 
@@ -56,17 +58,24 @@ Before running the chatbot, you need to ingest the document and create the vecto
 
 - `app.py`: Flask application for the web interface
 - `rag_chatbot.py`: Core RAG chatbot logic
-- `ingest.py`: Script for ingesting the document and creating the vectorstore
+- `ingest.py`: Script for ingesting the document and creating the vectorstore (optional)
 - `evaluation.py`: Functions for evaluating response quality
 - `templates/index.html`: HTML template for the web interface
-- `experiments/test_retreival.py`: Script for evaluating retrieval performance
+- `experiments/`: Directory containing retrieval performance evaluation scripts and data
+  - `test_retreival.py`: Script for evaluating retrieval performance
+  - `generated_questions.csv`: Pre-generated test questions
+  - `retrieval_results.json`: Results of retrieval performance evaluation
 - `dashboard.py`: Streamlit dashboard for monitoring chatbot performance
+- `vectorstore/`: Directory containing pre-generated embeddings and Chroma database
 
 ## Retrieval Performance Evaluation
 
 To evaluate the retrieval performance:
 
-1. Ensure you're in the `experiments` directory
+1. Navigate to the `experiments` directory:
+   ```
+   cd experiments
+   ```
 2. Run the evaluation script:
    ```
    python test_retreival.py
@@ -75,7 +84,7 @@ To evaluate the retrieval performance:
    - MinSearch
    - Chroma Semantic Search
    - Hybrid Search (combining embedding-based and TF-IDF)
-4. Results will be saved in `../vectorstore/retrieval_results.json`
+4. Results will be saved in `retrieval_results.json` within the `experiments` directory.
 
 ### How the Retrieval Evaluation Works
 
@@ -83,7 +92,7 @@ The `test_retreival.py` script follows this workflow:
 
 1. **Data Loading**: It loads the preprocessed chunks and their embeddings from the Chroma vectorstore.
 
-2. **Question Generation**: If not already available, it generates a set of test questions based on the content of each chunk. These questions are stored for consistent testing.
+2. **Question Loading**: It loads pre-generated test questions from `generated_questions.csv`. If this file doesn't exist, it will generate new questions based on the content of each chunk.
 
 3. **Sampling**: A subset of questions is sampled to reduce evaluation time while maintaining statistical significance.
 
@@ -96,7 +105,7 @@ The `test_retreival.py` script follows this workflow:
      - Hit Rate: The proportion of questions where the correct chunk was retrieved.
      - Mean Reciprocal Rank (MRR): A measure of how high the correct chunk appears in the results, on average.
 
-6. **Results Compilation**: The script compiles the results for each method and saves them to a JSON file.
+6. **Results Compilation**: The script compiles the results for each method and saves them to `retrieval_results.json`.
 
 We evaluated the retrieval performance using three different methods:
 
