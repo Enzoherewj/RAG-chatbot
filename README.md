@@ -109,3 +109,21 @@ These visualizations provide valuable insights into the chatbot's performance, u
 - The monitoring dashboard helps in tracking the chatbot's performance and user engagement over time
 
 Enjoy exploring "The Brothers Karamazov" with your new AI assistant!
+
+## Docker Deployment
+
+To run the application in a Docker container:
+
+1. Build the Docker image:
+   ```
+   docker build -t brothers-karamazov-chatbot .
+   ```
+
+2. Run the Docker container:
+   ```
+   docker run -p 5001:5001 -e OPENAI_API_KEY=your_api_key_here brothers-karamazov-chatbot
+   ```
+
+3. Access the chatbot at `http://localhost:5001` in your web browser.
+
+Note: Make sure to replace `your_api_key_here` with your actual OpenAI API key.

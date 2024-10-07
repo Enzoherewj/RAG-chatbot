@@ -3,6 +3,16 @@ from rag_chatbot import chat, initialize_chatbot
 import os
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get OpenAI API key from environment variable
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 app = Flask(__name__)
 

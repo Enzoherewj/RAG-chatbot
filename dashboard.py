@@ -37,18 +37,54 @@ def main():
     # 3. Average Evaluation Scores Over Time
     st.subheader("3. Average Evaluation Scores Over Time")
     interactions_df['date'] = interactions_df['timestamp'].dt.date
-    
-    # Convert evaluation scores to numeric values
-    interactions_df['evaluation_score'] = pd.to_numeric(interactions_df['evaluation'], errors='coerce')
-    
+
+    # Extract evaluation relevance score from the evaluation object
+    interactions_df['evaluation_score'] = interactions_df['evaluation'].apply(
+        lambda x: x.get('relevance') if isinstance(x, dict) and 'relevance' in x else None
+    )
+    interactions_df['evaluation_score'] = pd.to_numeric(interactions_df['evaluation_score'], errors='coerce')
+
     avg_scores = interactions_df.groupby('date')['evaluation_score'].mean().reset_index()
-    fig_avg_scores = px.line(avg_scores, x='date', y='evaluation_score', title="Average Evaluation Scores Over Time")
-    st.plotly_chart(fig_avg_scores)
+
+    if not avg_scores.empty:
+        # Create a figure with both line and scatter plots
+        fig_avg_scores = go.Figure()
+        
+        # Add line plot
+        fig_avg_scores.add_trace(go.Scatter(
+            x=avg_scores['date'], 
+            y=avg_scores['evaluation_score'], 
+            mode='lines',
+            name='Average Score'
+        ))
+        
+        # Add scatter plot
+        fig_avg_scores.add_trace(go.Scatter(
+            x=avg_scores['date'], 
+            y=avg_scores['evaluation_score'], 
+            mode='markers',
+            name='Data Points',
+            marker=dict(size=8)
+        ))
+        
+        # Update layout
+        fig_avg_scores.update_layout(
+            title="Average Evaluation Scores Over Time",
+            xaxis_title="Date",
+            yaxis_title="Average Score",
+            hovermode="x unified"
+        )
+        
+        st.plotly_chart(fig_avg_scores)
+    else:
+        st.write("No evaluation scores available to display.")
 
     # 4. Query Length Distribution
     st.subheader("4. Query Length Distribution")
     interactions_df['query_length'] = interactions_df['query'].str.len()
     fig_query_length = px.histogram(interactions_df, x='query_length', title="Distribution of Query Lengths")
+    # {{ edit_3 }} Add more space between bars
+    fig_query_length.update_layout(bargap=0.3)  # Increased bargap for better spacing
     st.plotly_chart(fig_query_length)
 
     # 5. Top 10 Most Common Words in Queries
