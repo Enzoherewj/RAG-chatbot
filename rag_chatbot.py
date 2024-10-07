@@ -32,7 +32,7 @@ def initialize_chatbot():
     vectorstore = Chroma(persist_directory=VECTORSTORE_PATH, embedding_function=embeddings)
 
     print("Setting up conversational chain...")
-    llm = ChatOpenAI(temperature=0.7, model_name="gpt-4o-mini")
+    llm = ChatOpenAI(temperature=0.7, model_name="gpt-4-1106-preview")  # Update to the latest available model
 
     # Define the prompt template
     prompt_template = """You are a novel assistant, specifically knowledgeable about "The Brothers Karamazov" by Fyodor Dostoevsky. Your task is to answer questions based on the following context from the novel:
@@ -59,7 +59,12 @@ def initialize_chatbot():
 def chat(query, chat_history):
     global qa_chain
     try:
-        result = qa_chain({"question": query, "chat_history": chat_history})
+        # Ensure chat_history is in the correct format
+        formatted_history = [(q, a) for q, a in chat_history]
+        
+        # Use the invoke method instead of __call__
+        result = qa_chain.invoke({"question": query, "chat_history": formatted_history})
+        
         answer = result["answer"]
         source_docs = result["source_documents"]
         
@@ -74,5 +79,5 @@ def chat(query, chat_history):
         
         return answer, source_docs, evaluation
     except Exception as e:
-        logging.error(f"Error in chat function: {str(e)}")
+        logging.error(f"Error in chat function: {str(e)}", exc_info=True)
         raise
