@@ -56,7 +56,7 @@ def handle_chat():
         "answer": answer,
         "evaluation": evaluation
     }
-    with open('interaction_log.json', 'a') as f:
+    with open('logs/interaction_log.json', 'a') as f:
         json.dump(interaction, f)
         f.write('\n')
     
@@ -72,7 +72,7 @@ def feedback():
     feedback_data['timestamp'] = datetime.now().isoformat()
     
     # Store feedback data
-    with open('feedback_log.json', 'a') as f:
+    with open('logs/feedback_log.json', 'a') as f:
         json.dump(feedback_data, f)
         f.write('\n')
     
