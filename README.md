@@ -77,6 +77,43 @@ To evaluate the retrieval performance:
    - Hybrid Search (combining embedding-based and TF-IDF)
 4. Results will be saved in `../vectorstore/retrieval_results.json`
 
+### How the Retrieval Evaluation Works
+
+The `test_retreival.py` script follows this workflow:
+
+1. **Data Loading**: It loads the preprocessed chunks and their embeddings from the Chroma vectorstore.
+
+2. **Question Generation**: If not already available, it generates a set of test questions based on the content of each chunk. These questions are stored for consistent testing.
+
+3. **Sampling**: A subset of questions is sampled to reduce evaluation time while maintaining statistical significance.
+
+4. **Index Creation**: It creates indexes for each retrieval method (MinSearch, Chroma, and Hybrid).
+
+5. **Evaluation**: For each retrieval method:
+   - It runs each test question through the retrieval function.
+   - It checks if the expected chunk (the one the question was generated from) is in the top retrieved results.
+   - It calculates two metrics:
+     - Hit Rate: The proportion of questions where the correct chunk was retrieved.
+     - Mean Reciprocal Rank (MRR): A measure of how high the correct chunk appears in the results, on average.
+
+6. **Results Compilation**: The script compiles the results for each method and saves them to a JSON file.
+
+We evaluated the retrieval performance using three different methods:
+
+1. MinSearch
+2. Chroma Semantic Search
+3. Hybrid Search (combining embedding-based and TF-IDF)
+
+The results of our evaluation are as follows:
+
+| Method                  | Hit Rate | Mean Reciprocal Rank (MRR) |
+|-------------------------|----------|-----------------------------|
+| MinSearch               | 0.62     | 0.3715                      |
+| Chroma Semantic Search  | 0.64     | 0.4839                      |
+| Hybrid Search           | 0.61     | 0.4420                      |
+
+Based on these results, we have chosen **Chroma Semantic Search** as our primary retrieval method for the chatbot. It demonstrated the highest hit rate (0.64) and mean reciprocal rank (0.4839), indicating better overall performance in retrieving relevant passages from "The Brothers Karamazov."
+
 ## Monitoring Dashboard
 
 The project includes a Streamlit dashboard for monitoring the chatbot's performance and user interactions.
